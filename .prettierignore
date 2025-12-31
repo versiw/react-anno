@@ -1,0 +1,14 @@
+# default
+
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+
+# custom
+
+**/dist
+**/cache
+**/*.md
+public/**/*
+package-lock.json
