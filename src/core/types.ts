@@ -41,18 +41,52 @@ export interface RectShape extends BaseShape {
   height: number
 }
 
+export interface PolygonShape extends BaseShape {
+  type: 'polygon'
+  points: { x: number; y: number }[]
+}
+
 /**
  * 所有支持的形状联合类型
  * @description 目前仅支持矩形，后续扩展多边形等只需在此处添加联合类型
  */
-export type Shape = RectShape
+export type Shape = RectShape | PolygonShape
 
 /**
  * 工具操作模式
  * - `select`: 选择模式，用于点击选中、拖拽移动或修改形状
  * - `rect`: 绘制模式，用于在画布上按住鼠标绘制矩形
  */
-export type ToolType = 'select' | 'rect'
+export type ToolType = 'select' | 'rect' | 'polygon'
+
+/**
+ * 工具上下文：提供给具体工具操作 React 状态的能力
+ */
+export interface ToolContext {
+  /** SVG DOM 引用，用于计算坐标 */
+  svgElement: SVGSVGElement
+  /** 当前的草稿形状 */
+  currentDraft: Shape | null
+  /** 更新草稿状态 */
+  setDraft: (shape: Shape | null) => void
+  /** 提交绘制结果 */
+  onDrawEnd: (shape: Shape) => void
+}
+
+/**
+ * 工具策略接口：所有工具（矩形、圆形、画笔）都必须实现此接口
+ */
+export interface IToolStrategy {
+  /** 工具 ID */
+  id: ToolType
+
+  /** 鼠标按下 */
+  onMouseDown(e: React.MouseEvent, ctx: ToolContext): void
+  /** 鼠标移动 */
+  onMouseMove(e: React.MouseEvent, ctx: ToolContext): void
+  /** 鼠标松开 */
+  onMouseUp(e: React.MouseEvent, ctx: ToolContext): void
+}
 
 /**
  * Annotator 标注器组件属性

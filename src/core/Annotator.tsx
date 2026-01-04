@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import type { AnnotatorProps } from './types'
-import { Rect } from './shapes/Rect'
 import { useDraw } from './hooks/useDraw'
+import { ShapeRenderer } from './ShapeRenderer'
 
 export const Annotator: React.FC<AnnotatorProps> = ({
   imageUrl,
@@ -15,7 +15,6 @@ export const Annotator: React.FC<AnnotatorProps> = ({
   onSelect
 }) => {
   const svgRef = useRef<SVGSVGElement>(null)
-
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
 
   const { draft, handleMouseDown, handleMouseMove, handleMouseUp } = useDraw({
@@ -35,55 +34,39 @@ export const Annotator: React.FC<AnnotatorProps> = ({
 
   return (
     <div
-      style={{
-        position: 'relative',
-        width,
-        height,
-        overflow: 'hidden', // 防止图片加载前溢出
-        userSelect: 'none',
-        ...style
-      }}
+      className="relative overflow-hidden select-none flex items-center justify-center bg-gray-100/30"
+      style={{ width, height, ...style }}
     >
-      <img
-        src={imageUrl}
-        onLoad={handleImageLoad}
-        style={{
-          display: 'block',
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          pointerEvents: 'none'
-        }}
-        draggable={false}
-        alt="annotation target"
-      />
+      <div className="relative max-w-full max-h-full flex shadow-sm">
+        <img
+          src={imageUrl}
+          onLoad={handleImageLoad}
+          className="block max-w-full max-h-full w-auto h-auto object-contain pointer-events-none"
+          draggable={false}
+          alt="annotation target"
+        />
 
-      {imgSize.w > 0 && (
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${imgSize.w} ${imgSize.h}`}
-          preserveAspectRatio="xMidYMid meet"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            cursor: tool === 'rect' ? 'crosshair' : 'default'
-          }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          {data.map((shape) => (
-            <Rect key={shape.id} shape={shape} isSelected={shape.id === selectedId} />
-          ))}
+        {imgSize.w > 0 && (
+          <svg
+            data-testid="anno-canvas"
+            ref={svgRef}
+            viewBox={`0 0 ${imgSize.w} ${imgSize.h}`}
+            className={`absolute top-0 left-0 w-full h-full outline-none ${
+              tool === 'select' ? 'cursor-default' : 'cursor-crosshair'
+            }`}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {data.map((shape) => (
+              <ShapeRenderer key={shape.id} shape={shape} isSelected={shape.id === selectedId} />
+            ))}
 
-          {/* 2. 渲染正在绘制的草稿 */}
-          {draft && <Rect shape={draft} isDraft />}
-        </svg>
-      )}
+            {draft && <ShapeRenderer shape={draft} isDraft />}
+          </svg>
+        )}
+      </div>
     </div>
   )
 }
