@@ -1,6 +1,44 @@
 import React from 'react'
 
 /**
+ * 形状的具体样式属性
+ */
+export interface ShapeStyle {
+  /** 描边颜色 (边框颜色) */
+  stroke?: string
+  /** 描边宽度 */
+  strokeWidth?: number
+  /**
+   * 虚线描边模式
+   *
+   * @description 定义虚线和间隙的长度序列。常用于表示“草稿”或“未激活”状态。
+   * @example
+   * "4 4" - 4px实线，4px间隔
+   * "5 3" - 5px实线，3px间隔 (更紧凑)
+   * "0" - 实线 (无虚线)
+   */
+  strokeDasharray?: string
+  /** 填充颜色 */
+  fill?: string
+  /** 光标样式 */
+  cursor?: string
+  /** SVG 滤镜，用于实现阴影以增强对比度 */
+  filter?: string
+}
+
+/**
+ * 全局样式配置接口
+ */
+export interface AnnotatorStyleConfig {
+  /** 默认状态（未选中）的样式 */
+  default?: ShapeStyle
+  /** 选中状态的样式 */
+  selected?: ShapeStyle
+  /** 绘制中（草稿）状态的样式 */
+  draft?: ShapeStyle
+}
+
+/**
  * 基础形状接口
  * 所有具体的形状类型（如矩形、多边形）都应继承此接口
  */
@@ -157,4 +195,9 @@ export interface AnnotatorProps {
    * @param shape 新生成的形状数据
    */
   onDrawEnd?: (shape: Shape) => void
+
+  /**
+   * 自定义标注样式配置
+   */
+  styleConfig?: AnnotatorStyleConfig
 }

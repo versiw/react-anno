@@ -1,7 +1,6 @@
 import React from 'react'
 import type { Shape } from './types'
 import { Rect } from './shapes/Rect'
-// import { Polygon } from './shapes/Polygon'
 
 interface ShapeRendererProps {
   shape: Shape
@@ -15,12 +14,7 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = (props) => {
   switch (shape.type) {
     case 'rect':
       return <Rect shape={shape} isSelected={props.isSelected} isDraft={props.isDraft} />
-
-    // case 'polygon':
-    //   return <Polygon ... />
-
     default:
-      console.warn(`ShapeRenderer: Unknown shape type "${(shape as { type: string }).type}"`)
       return null
   }
 }
