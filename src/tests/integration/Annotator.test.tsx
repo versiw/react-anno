@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Annotator } from '@/core/Annotator'
 import { render, fireEvent, screen } from '@testing-library/react'
+import type { Shape } from '@/core/types'
 
 describe('Annotator 集成测试', () => {
   it('绘制完成后应调用 onChange 并传递新形状', () => {
@@ -36,5 +37,43 @@ describe('Annotator 集成测试', () => {
     expect(newShapes).toHaveLength(1)
     expect(newShapes[0].type).toBe('rect')
     expect(newShapes[0].width).toBe(100)
+  })
+
+  it('在绘制模式下(tool=rect)开始绘制时，应取消当前选中的形状', () => {
+    const handleSelect = vi.fn()
+    const handleChange = vi.fn()
+
+    const existingShape: Shape = {
+      id: 'existing-1',
+      type: 'rect',
+      x: 10,
+      y: 10,
+      width: 50,
+      height: 50
+    }
+
+    render(
+      <Annotator
+        imageUrl="test.jpg"
+        data={[existingShape]}
+        tool="rect"
+        selectedId="existing-1"
+        onChange={handleChange}
+        onSelect={handleSelect}
+        width={800}
+        height={600}
+      />
+    )
+
+    const img = screen.getByAltText('annotation target') as HTMLImageElement
+    Object.defineProperty(img, 'naturalWidth', { configurable: true, value: 800 })
+    Object.defineProperty(img, 'naturalHeight', { configurable: true, value: 600 })
+    fireEvent.load(img)
+
+    const canvas = screen.getByTestId('anno-canvas')
+
+    fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 })
+
+    expect(handleSelect).toHaveBeenCalledWith(null)
   })
 })

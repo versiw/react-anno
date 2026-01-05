@@ -32,6 +32,10 @@ export const useDraw = ({ svgRef, tool, data, onChange, onSelect }: UseDrawParam
         return
       }
 
+      if (eventType === 'onMouseDown') {
+        onSelect?.(null)
+      }
+
       const strategy = getToolStrategy(tool)
       if (!strategy) return
 
