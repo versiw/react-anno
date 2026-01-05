@@ -1,9 +1,10 @@
-import React, { useRef, useState, useMemo } from 'react'
-import type { AnnotatorProps, AnnotatorStyleConfig } from './types'
+import React, { useRef, useState, useMemo, useCallback } from 'react'
+import type { AnnotatorProps, AnnotatorStyleConfig, Shape } from './types'
 import { useDraw } from './hooks/useDraw'
 import { ShapeRenderer } from './ShapeRenderer'
 import { DEFAULT_STYLE_CONFIG } from './constants'
 import { AnnoProvider } from './context/AnnoContext'
+import { Transformer } from './transformer/Transformer'
 
 export const Annotator: React.FC<AnnotatorProps> = ({
   imageUrl,
@@ -17,7 +18,10 @@ export const Annotator: React.FC<AnnotatorProps> = ({
   onChange,
   onSelect
 }) => {
-  const svgRef = useRef<SVGSVGElement>(null)
+  const svgRef = useRef<SVGSVGElement | null>(null)
+
+  const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null)
+
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
 
   const finalStyleConfig = useMemo(() => {
@@ -43,6 +47,20 @@ export const Annotator: React.FC<AnnotatorProps> = ({
     })
   }
 
+  const selectedShape = useMemo(() => {
+    return data.find((s) => s.id === selectedId)
+  }, [data, selectedId])
+
+  const handleTransformerChange = (newShape: Shape) => {
+    const newData = data.map((s) => (s.id === newShape.id ? newShape : s))
+    onChange(newData)
+  }
+
+  const setSvgRef = useCallback((el: SVGSVGElement | null) => {
+    svgRef.current = el
+    setSvgNode(el)
+  }, [])
+
   return (
     <AnnoProvider value={{ styleConfig: finalStyleConfig }}>
       <div
@@ -61,7 +79,7 @@ export const Annotator: React.FC<AnnotatorProps> = ({
           {imgSize.w > 0 && (
             <svg
               data-testid="anno-canvas"
-              ref={svgRef}
+              ref={setSvgRef}
               viewBox={`0 0 ${imgSize.w} ${imgSize.h}`}
               className={`absolute top-0 left-0 w-full h-full outline-none`}
               onMouseDown={handleMouseDown}
@@ -74,6 +92,14 @@ export const Annotator: React.FC<AnnotatorProps> = ({
               ))}
 
               {draft && <ShapeRenderer shape={draft} isDraft />}
+
+              {tool === 'select' && selectedShape && svgNode && (
+                <Transformer
+                  shape={selectedShape}
+                  svgElement={svgNode}
+                  onChange={handleTransformerChange}
+                />
+              )}
             </svg>
           )}
         </div>

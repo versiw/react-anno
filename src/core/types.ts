@@ -1,6 +1,52 @@
 import React from 'react'
 
 /**
+ * 变形控制点
+ */
+export interface TransformHandle {
+  /** 唯一标识，例如 'nw' (西北角), 'body' (整体) */
+  id: string
+  /** 控制点中心 X 坐标 */
+  x: number
+  /** 控制点中心 Y 坐标 */
+  y: number
+  /** CSS 光标样式 */
+  cursor: string
+}
+
+/**
+ * 变形操作的上下文
+ * 包含计算新形状所需的所有增量信息
+ */
+export interface TransformContext {
+  /** 鼠标 X 轴移动增量 */
+  dx: number
+  /** 鼠标 Y 轴移动增量 */
+  dy: number
+  /** 拖拽开始时的原始形状快照 */
+  startShape: Shape
+}
+
+/**
+ * 变形策略接口
+ * 用于解耦不同形状的交互逻辑
+ */
+export interface TransformerStrategy<T extends Shape = Shape> {
+  /**
+   * 根据形状数据计算所有控制点的位置
+   */
+  getHandles: (shape: T) => TransformHandle[]
+
+  /**
+   * 根据拖拽操作计算新的形状数据
+   * @param shape 当前形状（通常使用 startShape 计算，这里作为泛型入口）
+   * @param handleId 被拖拽的控制点ID
+   * @param ctx 变形上下文
+   */
+  transform: (handleId: string, ctx: TransformContext) => T
+}
+
+/**
  * 形状的具体样式属性
  */
 export interface ShapeStyle {
