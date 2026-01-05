@@ -86,6 +86,7 @@ export const Transformer: React.FC<TransformerProps> = ({ shape, svgElement, onC
         fill="transparent"
         stroke="transparent"
         className="cursor-move"
+        data-testid="transformer-body"
         onMouseDown={(e) => handleMouseDown(e, 'body')}
       />
 
@@ -94,6 +95,7 @@ export const Transformer: React.FC<TransformerProps> = ({ shape, svgElement, onC
       {handles.map((handle) => (
         <rect
           key={handle.id}
+          data-testid={`transformer-handle-${handle.id}`}
           x={handle.x - 4}
           y={handle.y - 4}
           width={8}
