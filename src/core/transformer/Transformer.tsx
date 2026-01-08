@@ -51,10 +51,13 @@ export const Transformer: React.FC<TransformerProps> = ({ shape, svgElement, onC
       const dx = currentPoint.x - startX
       const dy = currentPoint.y - startY
 
+      const { width, height } = svgElement.viewBox.baseVal
+
       const newShape = strategy.transform(activeHandleId, {
         dx,
         dy,
-        startShape
+        startShape,
+        imageSize: { width, height }
       })
 
       onChange(newShape)

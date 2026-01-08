@@ -25,6 +25,11 @@ export interface TransformContext {
   dy: number
   /** 拖拽开始时的原始形状快照 */
   startShape: Shape
+  /** 图像边界限制 */
+  imageSize: {
+    width: number
+    height: number
+  }
 }
 
 /**

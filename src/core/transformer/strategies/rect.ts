@@ -20,41 +20,68 @@ export const rectStrategy: TransformerStrategy<RectShape> = {
 
   transform: (handleId, ctx) => {
     const shape = ctx.startShape as RectShape
-    const { dx, dy } = ctx
+    const { dx, dy, imageSize } = ctx
     const minSize = 5
 
     if (handleId === 'body') {
+      let newX = shape.x + dx
+      let newY = shape.y + dy
+
+      if (newX < 0) newX = 0
+      if (newX + shape.width > imageSize.width) {
+        newX = imageSize.width - shape.width
+      }
+
+      if (newY < 0) newY = 0
+      if (newY + shape.height > imageSize.height) {
+        newY = imageSize.height - shape.height
+      }
+
       return {
         ...shape,
-        x: shape.x + dx,
-        y: shape.y + dy
+        x: newX,
+        y: newY
       }
     }
 
     let { x, y, width, height } = shape
 
     if (['nw', 'w', 'sw'].includes(handleId)) {
-      const newWidth = Math.max(minSize, width - dx)
-      if (newWidth !== minSize) {
-        x += width - newWidth
-        width = newWidth
-      }
+      const rightEdge = shape.x + shape.width
+      let proposedX = shape.x + dx
+
+      if (proposedX < 0) proposedX = 0
+      if (proposedX > rightEdge - minSize) proposedX = rightEdge - minSize
+
+      x = proposedX
+      width = rightEdge - proposedX
     }
 
     if (['ne', 'e', 'se'].includes(handleId)) {
-      width = Math.max(minSize, width + dx)
+      let proposedWidth = width + dx
+      if (x + proposedWidth > imageSize.width) {
+        proposedWidth = imageSize.width - x
+      }
+      width = Math.max(minSize, proposedWidth)
     }
 
     if (['nw', 'n', 'ne'].includes(handleId)) {
-      const newHeight = Math.max(minSize, height - dy)
-      if (newHeight !== minSize) {
-        y += height - newHeight
-        height = newHeight
-      }
+      const bottomEdge = shape.y + shape.height
+      let proposedY = shape.y + dy
+
+      if (proposedY < 0) proposedY = 0
+      if (proposedY > bottomEdge - minSize) proposedY = bottomEdge - minSize
+
+      y = proposedY
+      height = bottomEdge - proposedY
     }
 
     if (['sw', 's', 'se'].includes(handleId)) {
-      height = Math.max(minSize, height + dy)
+      let proposedHeight = height + dy
+      if (y + proposedHeight > imageSize.height) {
+        proposedHeight = imageSize.height - y
+      }
+      height = Math.max(minSize, proposedHeight)
     }
 
     return {
