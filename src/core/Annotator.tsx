@@ -5,6 +5,7 @@ import { ShapeRenderer } from './ShapeRenderer'
 import { DEFAULT_STYLE_CONFIG } from './constants'
 import { AnnoProvider } from './context/AnnoContext'
 import { Transformer } from './transformer/Transformer'
+import { cn } from '@/lib/utils'
 
 export const Annotator: React.FC<AnnotatorProps> = ({
   imageUrl,
@@ -12,16 +13,15 @@ export const Annotator: React.FC<AnnotatorProps> = ({
   tool,
   selectedId,
   width = '100%',
-  height = '600px',
+  height = '100%',
+  className,
   style,
   styleConfig: userStyleConfig,
   onChange,
   onSelect
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
-
   const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null)
-
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
 
   const finalStyleConfig = useMemo(() => {
@@ -64,7 +64,10 @@ export const Annotator: React.FC<AnnotatorProps> = ({
   return (
     <AnnoProvider value={{ styleConfig: finalStyleConfig }}>
       <div
-        className="relative overflow-hidden select-none flex items-center justify-center bg-gray-100/30"
+        className={cn(
+          'relative w-full h-full overflow-hidden select-none flex items-center justify-center bg-muted/10',
+          className
+        )}
         style={{ width, height, ...style }}
       >
         <div className="relative max-w-full max-h-full flex shadow-sm">
@@ -81,7 +84,7 @@ export const Annotator: React.FC<AnnotatorProps> = ({
               data-testid="anno-canvas"
               ref={setSvgRef}
               viewBox={`0 0 ${imgSize.w} ${imgSize.h}`}
-              className={`absolute top-0 left-0 w-full h-full outline-none`}
+              className="absolute top-0 left-0 w-full h-full outline-none touch-none"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}

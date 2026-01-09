@@ -42,30 +42,19 @@ function App() {
       <main className="flex-1 flex overflow-hidden">
         {/* --- 左侧画布区域 --- */}
         <div className="flex-1 bg-muted/30 relative flex flex-col min-w-0 p-6">
-          <Card className="w-full h-full border-border/50 shadow-sm bg-white relative overflow-hidden flex items-center justify-center">
-            {/* 网格背景装饰 */}
-            <div
-              className="absolute inset-0 pointer-events-none opacity-[0.03]"
-              style={{
-                backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-              }}
-            />
-
-            {/* 核心组件：Annotator */}
+          <Card className="w-full h-full border-border/50 shadow-sm bg-white relative overflow-hidden">
             <Annotator
               imageUrl="https://images.unsplash.com/photo-1550948537-130a1ce83314?auto=format&fit=crop&w=1000&q=80"
-              // 数据流 (双向绑定)
               data={shapes}
               onChange={setShapes}
-              // 工具控制
               tool={tool}
-              // 选中控制
               selectedId={selectedId || undefined}
               onSelect={setSelectedId}
-              width="100%"
-              height="100%"
-              style={{ backgroundColor: 'transparent' }}
+              className="bg-white"
+              style={{
+                backgroundImage: 'radial-gradient(#00000015 1px, transparent 1px)',
+                backgroundSize: '20px 20px'
+              }}
             />
           </Card>
         </div>

@@ -220,6 +220,12 @@ export interface AnnotatorProps {
   onSelect?: (id: string | null) => void
 
   /**
+   * 容器类名
+   * @description 用于控制最外层容器的样式（如背景、边框等）
+   */
+  className?: string
+
+  /**
    * 容器内联样式
    */
   style?: React.CSSProperties
