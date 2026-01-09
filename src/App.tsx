@@ -6,8 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
-import { Annotator } from '@/core/Annotator'
-import type { Shape, ToolType } from '@/core/types'
+import { Annotator } from 'react-anno'
+import type { Shape, ToolType } from 'react-anno'
 
 import viteLogo from '/vite.svg'
 
