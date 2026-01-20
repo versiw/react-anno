@@ -1,57 +1,33 @@
 /**
- * @Description: 指定目录生成 AI 上下文脚本
- * @Usage: npm run context <directory_path>
- * @Example: npm run context src/components
+ * @Description: 指定目录生成 AI 上下文脚本 (支持多目录 & 自动复制到剪切板)
+ * @Usage: npx tsx scripts/context-gen.ts <path1> <path2> ...
+ * @Example: npx tsx scripts/context-gen.ts src/components src/utils/helper.ts
  */
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { spawn } from 'node:child_process'
 
-// 获取命令行参数（去掉 node 和 脚本路径）
-const args = process.argv.slice(2)
-const targetDirArg = args[0]
-
-if (!targetDirArg) {
-  console.error('❌ 请提供目标目录路径，例如: npm run context src/components')
-  process.exit(1)
-}
-
-const rootDir = process.cwd()
-// 解析目标绝对路径
-const targetFullPath = path.resolve(rootDir, targetDirArg)
-
-// 检查路径是否存在
-if (!fs.existsSync(targetFullPath)) {
-  console.error(`❌ 路径不存在: ${targetFullPath}`)
-  process.exit(1)
-}
-
-// 生成输出文件名：project_context_src_components.md
-const sanitizedName = targetDirArg
-  .replace(/^\.\//, '') // 移除开头的 ./
-  .replace(/[\\/]/g, '_') // 替换斜杠为下划线
-  .replace(/^_/, '')
-
-const OUTPUT_FILE = `project_context_${sanitizedName}.md`
-const outputFilePath = path.join(rootDir, OUTPUT_FILE)
-
-// =================================================================================
-// 配置区域 (沿用你的配置)
-// =================================================================================
 const CONFIG = {
-  // 这里可以只排除一些通用的系统目录，具体业务目录由参数控制
+  outputPrefix: 'project_context_',
+
+  // 排除的目录
   excludedDirs: [
     'node_modules',
     '.git',
     '.next',
     '.vscode',
+    '.idea',
     'dist',
     'build',
     'coverage',
     'public',
-    'releases'
+    'releases',
+    'tmp',
+    'temp'
   ],
 
+  // 排除的文件
   excludedFiles: [
     'package-lock.json',
     'yarn.lock',
@@ -60,11 +36,14 @@ const CONFIG = {
     '.DS_Store',
     '.env',
     '.env.local',
+    '.env.development',
+    '.env.production',
     'CHANGELOG.md',
-    // 排除自己生成的 context 文件
-    ...fs.readdirSync(rootDir).filter((f) => f.startsWith('project_context'))
+    'README.md',
+    'LICENSE'
   ],
 
+  // 排除的后缀名
   excludedExtensions: [
     '.png',
     '.jpg',
@@ -82,6 +61,8 @@ const CONFIG = {
     '.docx',
     '.xls',
     '.xlsx',
+    '.ppt',
+    '.pptx',
     '.zip',
     '.tar',
     '.gz',
@@ -92,28 +73,17 @@ const CONFIG = {
     '.bin',
     '.class',
     '.jar',
+    '.o',
+    '.so',
     '.eot',
     '.otf',
     '.ttf',
     '.woff',
     '.woff2'
-  ]
-}
+  ],
 
-// =================================================================================
-// 核心逻辑
-// =================================================================================
-
-function shouldProcessFile(fileName: string): boolean {
-  if (CONFIG.excludedFiles.includes(fileName)) return false
-  const ext = path.extname(fileName).toLowerCase()
-  if (CONFIG.excludedExtensions.includes(ext)) return false
-  return true
-}
-
-function getLanguage(fileName: string): string {
-  const ext = path.extname(fileName).toLowerCase()
-  const map: Record<string, string> = {
+  // 文件语言映射
+  languageMap: {
     '.js': 'javascript',
     '.ts': 'typescript',
     '.tsx': 'tsx',
@@ -132,119 +102,227 @@ function getLanguage(fileName: string): string {
     '.java': 'java',
     '.rs': 'rust',
     '.go': 'go',
-    '.vue': 'vue'
-  }
-  return map[ext] || ''
+    '.vue': 'vue',
+    '.c': 'c',
+    '.cpp': 'cpp'
+  } as Record<string, string>
 }
 
-function initOutputFile(): void {
-  try {
-    const header = [
-      `# Project Context: ${targetDirArg}`,
-      ``,
-      `> Target Path: ${targetFullPath}`,
-      `> Generated at: ${new Date().toLocaleString()}`,
-      ``,
-      `---`,
-      ``,
-      ``
-    ].join('\n')
+function shouldProcessFile(fileName: string): boolean {
+  if (fileName.startsWith(CONFIG.outputPrefix)) return false
+  if (CONFIG.excludedFiles.includes(fileName)) return false
 
-    fs.writeFileSync(outputFilePath, header, 'utf8')
-    console.log(`✅ 文件已初始化: ${OUTPUT_FILE}`)
-  } catch (error) {
-    console.error(`❌ 初始化文件失败:`, error)
+  const ext = path.extname(fileName).toLowerCase()
+  if (CONFIG.excludedExtensions.includes(ext)) return false
+
+  return true
+}
+
+function getLanguage(fileName: string): string {
+  const ext = path.extname(fileName).toLowerCase()
+  return CONFIG.languageMap[ext] || ''
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  return String(error)
+}
+
+function copyToClipboard(text: string): Promise<void> {
+  return new Promise((resolve) => {
+    let command = ''
+    let args: string[] = []
+
+    switch (process.platform) {
+      case 'win32':
+        command = 'powershell'
+        args = [
+          '-NoProfile',
+          '-Command',
+          `
+          $OutputEncoding = [System.Text.Encoding]::UTF8;
+          [Console]::InputEncoding = [System.Text.Encoding]::UTF8;
+          $content = [Console]::In.ReadToEnd();
+          Set-Clipboard -Value $content;
+          `
+        ]
+        break
+      case 'darwin':
+        command = 'pbcopy'
+        break
+      case 'linux':
+        command = 'xclip'
+        args = ['-selection', 'clipboard']
+        break
+      default:
+        console.warn('⚠️ 当前系统不支持自动复制到剪切板')
+        return resolve()
+    }
+
+    const child = spawn(command, args)
+
+    child.stdin.write(text, 'utf8')
+    child.stdin.end()
+
+    child.on('error', (err) => {
+      console.error('❌ 剪切板写入失败:', err.message)
+      resolve()
+    })
+
+    child.on('close', () => resolve())
+  })
+}
+
+function generateContextForPath(
+  targetPath: string,
+  rootDir: string
+): { content: string; outputPath: string } | null {
+  const fullPath = path.resolve(rootDir, targetPath)
+
+  if (!fs.existsSync(fullPath)) {
+    console.error(`❌ 路径不存在，已跳过: ${fullPath}`)
+    return null
+  }
+
+  const sanitizedName = targetPath
+    .replace(/^\.\//, '')
+    .replace(/^[\\/]/, '')
+    .replace(/[\\/]/g, '_')
+    .replace(/^_/, '')
+    .replace(/[:*?"<>|]/g, '')
+
+  const fileName = `${CONFIG.outputPrefix}${sanitizedName}.md`
+  const outputFilePath = path.join(rootDir, fileName)
+
+  const fileContentBuilder: string[] = []
+
+  fileContentBuilder.push(`# Project Context: ${targetPath}`)
+  fileContentBuilder.push(``)
+  fileContentBuilder.push(`> Source: ${fullPath}`)
+  fileContentBuilder.push(`> Generated: ${new Date().toLocaleString()}`)
+  fileContentBuilder.push(``)
+  fileContentBuilder.push(`---`)
+  fileContentBuilder.push(``)
+
+  const readFile = (filePath: string) => {
+    try {
+      const content = fs.readFileSync(filePath, 'utf8')
+      const relativePath = path.relative(rootDir, filePath)
+      const language = getLanguage(filePath)
+
+      if (content.includes('\0')) return
+
+      fileContentBuilder.push(`# File: ${relativePath}`)
+      fileContentBuilder.push(``)
+      fileContentBuilder.push(`\`\`\`${language}`)
+      fileContentBuilder.push(content)
+      fileContentBuilder.push('```')
+      fileContentBuilder.push(``)
+      fileContentBuilder.push(`---`)
+      fileContentBuilder.push(``)
+
+      console.log(`  📄 读取: ${relativePath}`)
+    } catch (err: unknown) {
+      console.error(`  ❌ 读取文件内容出错 ${filePath}:`, getErrorMessage(err))
+    }
+  }
+
+  const traverse = (currentPath: string) => {
+    let entries: string[]
+    try {
+      const stats = fs.statSync(currentPath)
+
+      if (stats.isFile()) {
+        if (shouldProcessFile(path.basename(currentPath))) {
+          readFile(currentPath)
+        }
+        return
+      }
+
+      entries = fs.readdirSync(currentPath)
+    } catch (err: unknown) {
+      console.error(`❌ 读取失败 ${currentPath}:`, getErrorMessage(err))
+      return
+    }
+
+    entries.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+
+    for (const entry of entries) {
+      const entryFullPath = path.join(currentPath, entry)
+
+      try {
+        const stats = fs.statSync(entryFullPath)
+
+        if (stats.isDirectory()) {
+          if (!CONFIG.excludedDirs.includes(entry)) {
+            traverse(entryFullPath)
+          }
+        } else if (stats.isFile()) {
+          if (shouldProcessFile(entry)) {
+            readFile(entryFullPath)
+          }
+        }
+      } catch {
+        continue
+      }
+    }
+  }
+
+  console.log(`📂 正在处理: ${targetPath}`)
+  traverse(fullPath)
+
+  return {
+    content: fileContentBuilder.join('\n'),
+    outputPath: outputFilePath
+  }
+}
+
+async function main() {
+  const args = process.argv.slice(2)
+  const rootDir = process.cwd()
+
+  if (args.length === 0) {
+    console.error('❌ 请提供至少一个目标目录或文件路径')
+    console.error('👉 示例: npm run context src/components src/utils')
     process.exit(1)
   }
-}
 
-function appendFileContent(fullPath: string, relativeToRoot: string): void {
-  try {
-    const content = fs.readFileSync(fullPath, 'utf8')
-    const language = getLanguage(relativeToRoot)
-
-    // 简单的二进制检测
-    if (content.includes('\0')) {
-      return
-    }
-
-    const formattedContent = [
-      `# File: ${relativeToRoot}`,
-      ``,
-      `\`\`\`${language}`,
-      content,
-      `\`\`\``,
-      ``,
-      `---`,
-      ``,
-      ``
-    ].join('\n')
-
-    fs.appendFileSync(outputFilePath, formattedContent, 'utf8')
-    console.log(`📄 已写入: ${relativeToRoot}`)
-  } catch (err: any) {
-    console.error(`❌ 读取错误 ${relativeToRoot}:`, err.message)
-  }
-}
-
-/**
- * 递归遍历目录
- * @param currentPath 当前绝对路径
- */
-function traverseDirectory(currentPath: string): void {
-  let entries: string[]
-  try {
-    entries = fs.readdirSync(currentPath)
-  } catch (err: any) {
-    // 如果传入的是文件而不是目录，直接处理文件
-    if (currentPath === targetFullPath && fs.statSync(currentPath).isFile()) {
-      const relativePath = path.relative(rootDir, currentPath)
-      if (shouldProcessFile(path.basename(currentPath))) {
-        appendFileContent(currentPath, relativePath)
-      }
-      return
-    }
-    console.error(`❌ 无法读取路径 ${currentPath}:`, err.message)
-    return
-  }
-
-  // 排序优化阅读体验
-  entries.sort((a, b) => a.localeCompare(b))
-
-  for (const entry of entries) {
-    const fullPath = path.join(currentPath, entry)
-    const relativePath = path.relative(rootDir, fullPath)
-
-    // 获取文件状态
-    let stats: fs.Stats
-    try {
-      stats = fs.statSync(fullPath)
-    } catch (err) {
-      continue
-    }
-
-    if (stats.isDirectory()) {
-      if (!CONFIG.excludedDirs.includes(entry)) {
-        traverseDirectory(fullPath)
-      }
-    } else if (stats.isFile()) {
-      if (shouldProcessFile(entry)) {
-        appendFileContent(fullPath, relativePath)
-      }
-    }
-  }
-}
-
-function main() {
   console.log(`🚀 开始提取上下文...`)
-  console.log(`📂 目标: ${targetDirArg}`)
+  console.log(`==========================================`)
 
-  initOutputFile()
-  traverseDirectory(targetFullPath)
+  let globalClipboardContent = ''
+  const generatedFiles: string[] = []
 
-  console.log('==========================================')
-  console.log('🎉 完成！')
-  console.log(`👉 输出文件: ${outputFilePath}`)
+  for (const targetArg of args) {
+    const result = generateContextForPath(targetArg, rootDir)
+
+    if (result) {
+      try {
+        fs.writeFileSync(result.outputPath, result.content, 'utf8')
+        generatedFiles.push(result.outputPath)
+        console.log(`✅ 已生成文件: ${path.basename(result.outputPath)}`)
+      } catch (err: unknown) {
+        console.error(`❌ 写入文件失败 ${result.outputPath}:`, getErrorMessage(err))
+      }
+
+      if (globalClipboardContent) {
+        globalClipboardContent += '\n\n' + '='.repeat(50) + '\n\n'
+      }
+      globalClipboardContent += result.content
+    }
+    console.log(`------------------------------------------`)
+  }
+
+  if (globalClipboardContent) {
+    console.log(`📋 正在写入剪贴板...`)
+    await copyToClipboard(globalClipboardContent)
+    console.log(`✨ 所有内容已复制到剪贴板！(可直接 Ctrl+V 粘贴给 AI)`)
+  } else {
+    console.warn(`⚠️ 没有生成有效内容。`)
+  }
+
+  console.log(`==========================================`)
+  console.log(`🎉 处理完成！共生成 ${generatedFiles.length} 个文档。`)
 }
 
 main()

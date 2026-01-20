@@ -71,6 +71,8 @@ function wrapForAI(diffContent: string): string {
 1. 总结主要修改了哪些功能模块？
 2. 分析这些新增代码的具体作用和逻辑。
 3. 检查是否存在潜在的 Bug 或类型安全问题。
+4. 评价代码为实现其目的是否遵循了最佳实现、代码质量如何、有无其它更好的建议和优化措施。
+5. 提供本次修改的中文版本 git commit message。
 
 \`\`\`diff
 ${diffContent}
