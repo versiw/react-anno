@@ -21,6 +21,39 @@ function getGitArgs(isStaged: boolean = false): string[] {
   return args
 }
 
+function getUntrackedFiles(): string[] {
+  try {
+    const args = ['ls-files', '--others', '--exclude-standard', '--', '.']
+    IGNORED_FILES.forEach((file) => args.push(`:(exclude)${file}`))
+
+    const output = execFileSync('git', args, { encoding: 'utf-8' })
+    return output.split('\n').filter((line) => line.trim() !== '')
+  } catch {
+    console.warn('⚠️ 获取未跟踪文件失败，将忽略新增文件。')
+    return []
+  }
+}
+
+function generateNewFileDiff(filePath: string): string {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    const lines = content.split('\n')
+
+    let diff = `diff --git a/${filePath} b/${filePath}\n`
+    diff += `new file mode 100644\n`
+    diff += `--- /dev/null\n`
+    diff += `+++ b/${filePath}\n`
+    diff += `@@ -0,0 +1,${lines.length} @@\n`
+    diff += lines.map((line) => '+' + line).join('\n')
+    diff += '\n'
+
+    return diff
+  } catch {
+    console.warn(`⚠️ 无法读取新文件: ${filePath} (可能是二进制文件或权限不足)`)
+    return ''
+  }
+}
+
 async function copyToClipboard(text: string): Promise<void> {
   const platform = os.platform()
 
@@ -94,6 +127,18 @@ async function main() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       throw new Error(`Git 执行失败: ${errorMessage}`)
+    }
+
+    if (!isStaged) {
+      const untrackedFiles = getUntrackedFiles()
+      if (untrackedFiles.length > 0) {
+        console.log(`📄 检测到 ${untrackedFiles.length} 个新增文件...`)
+        const newFilesDiff = untrackedFiles.map((file) => generateNewFileDiff(file)).join('\n')
+
+        if (newFilesDiff) {
+          diffOutput = diffOutput ? `${diffOutput}\n${newFilesDiff}` : newFilesDiff
+        }
+      }
     }
 
     if (!diffOutput.trim()) {
