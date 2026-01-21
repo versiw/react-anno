@@ -90,9 +90,16 @@ export const Annotator: React.FC<AnnotatorProps> = ({
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
-              {data.map((shape) => (
-                <ShapeRenderer key={shape.id} shape={shape} isSelected={shape.id === selectedId} />
-              ))}
+              {data.map(
+                (shape) =>
+                  shape.id !== selectedId && (
+                    <ShapeRenderer key={shape.id} shape={shape} isSelected={false} />
+                  )
+              )}
+
+              {selectedShape && (
+                <ShapeRenderer key={selectedShape.id} shape={selectedShape} isSelected={true} />
+              )}
 
               {draft && <ShapeRenderer shape={draft} isDraft />}
 
