@@ -28,7 +28,8 @@ export const useDraw = ({ svgRef, tool, data, onChange, onSelect }: UseDrawParam
       if (tool === 'select') {
         if (eventType === 'onMouseDown') {
           const target = e.target as Element
-          const clickedId = target.getAttribute('data-id')
+          const shapeElement = target.closest('[data-id]')
+          const clickedId = shapeElement?.getAttribute('data-id')
           onSelect?.(clickedId || null)
         }
         return
@@ -51,7 +52,7 @@ export const useDraw = ({ svgRef, tool, data, onChange, onSelect }: UseDrawParam
         storage: sessionRef.current
       }
 
-      strategy[eventType](e, context)+
+      strategy[eventType](e, context)
     },
     [tool, data, onChange, onSelect, svgRef]
   )
