@@ -36,7 +36,7 @@ export interface TransformContext {
  * 变形策略接口
  * 用于解耦不同形状的交互逻辑
  */
-export interface TransformerStrategy<T extends Shape = Shape> {
+export interface TransformStrategy<T extends Shape = Shape> {
   /**
    * 根据形状数据计算所有控制点的位置
    */
@@ -44,7 +44,6 @@ export interface TransformerStrategy<T extends Shape = Shape> {
 
   /**
    * 根据拖拽操作计算新的形状数据
-   * @param shape 当前形状（通常使用 startShape 计算，这里作为泛型入口）
    * @param handleId 被拖拽的控制点ID
    * @param ctx 变形上下文
    */
@@ -149,9 +148,9 @@ export type Shape = RectShape | PolygonShape
 export type ToolType = 'select' | 'rect' | 'polygon'
 
 /**
- * 工具上下文：提供给具体工具操作 React 状态的能力
+ * 绘制上下文：提供给具体绘制策略 React 状态的能力
  */
-export interface ToolContext {
+export interface DrawContext {
   /** SVG DOM 引用，用于计算坐标 */
   svgElement: SVGSVGElement
   /** 当前的草稿形状 */
@@ -160,21 +159,27 @@ export interface ToolContext {
   setDraft: (shape: Shape | null) => void
   /** 提交绘制结果 */
   onDrawEnd: (shape: Shape) => void
+  /**
+   * 会话存储 (Mutable)
+   * @description 用于存储策略在 MouseDown -> MouseUp 期间的临时数据 (如 startPoint)
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  storage: Record<string, any>
 }
 
 /**
- * 工具策略接口：所有工具（矩形、圆形、画笔）都必须实现此接口
+ * 绘制策略接口：所有绘制工具都必须实现此接口
  */
-export interface IToolStrategy {
+export interface DrawStrategy {
   /** 工具 ID */
   id: ToolType
 
   /** 鼠标按下 */
-  onMouseDown(e: React.MouseEvent, ctx: ToolContext): void
+  onMouseDown(e: React.MouseEvent, ctx: DrawContext): void
   /** 鼠标移动 */
-  onMouseMove(e: React.MouseEvent, ctx: ToolContext): void
+  onMouseMove(e: React.MouseEvent, ctx: DrawContext): void
   /** 鼠标松开 */
-  onMouseUp(e: React.MouseEvent, ctx: ToolContext): void
+  onMouseUp(e: React.MouseEvent, ctx: DrawContext): void
 }
 
 /**

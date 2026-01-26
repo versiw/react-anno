@@ -1,6 +1,6 @@
 import React from 'react'
-import type { RectShape } from '../types'
-import { useShapeStyle } from '../hooks/useShapeStyle'
+import { useShapeStyle } from '../../hooks/use-shape-style'
+import type { RectShape } from '../../types'
 
 interface RectProps {
   shape: RectShape

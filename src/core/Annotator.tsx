@@ -1,11 +1,11 @@
 import React, { useRef, useState, useMemo, useCallback } from 'react'
 import type { AnnotatorProps, AnnotatorStyleConfig, Shape } from './types'
-import { useDraw } from './hooks/useDraw'
-import { ShapeRenderer } from './ShapeRenderer'
+import { useDraw } from './hooks/use-draw'
+import { ShapeRenderer } from './components/ShapeRenderer'
 import { DEFAULT_STYLE_CONFIG } from './constants'
-import { AnnoProvider } from './context/AnnoContext'
-import { Transformer } from './transformer/Transformer'
+import { AnnoProvider } from './context/anno-context'
 import { cn } from '@/lib/utils'
+import { Transformer } from '@/core/components/transforms'
 
 export const Annotator: React.FC<AnnotatorProps> = ({
   imageUrl,

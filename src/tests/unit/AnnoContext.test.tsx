@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import { Rect } from '@/core/shapes/Rect'
-import { AnnoProvider } from '@/core/context/AnnoContext'
+import { Rect } from '@/core/components/shapes/Rect'
+import { AnnoProvider } from '@/core/context/anno-context'
 import { DEFAULT_STYLE_CONFIG } from '@/core/constants'
 import type { RectShape, AnnotatorStyleConfig } from '@/core/types'
 
@@ -18,7 +18,7 @@ const customConfig: AnnotatorStyleConfig = {
   default: { stroke: 'purple', strokeWidth: 10 }
 }
 
-describe('Rect 组件', () => {
+describe('Rect 组件与 Context 集成', () => {
   it('在 AnnoProvider 内部渲染时，应用 Context 中的自定义样式', () => {
     const { container } = render(
       <AnnoProvider value={{ styleConfig: customConfig }}>
@@ -29,9 +29,7 @@ describe('Rect 组件', () => {
     )
 
     const rectEl = container.querySelector('rect')
-
     expect(rectEl).not.toBeNull()
-
     expect(rectEl).toHaveAttribute('stroke', 'purple')
     expect(rectEl).toHaveAttribute('stroke-width', '10')
   })

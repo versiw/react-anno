@@ -1,6 +1,6 @@
+import { Rect } from '@/core/components/shapes'
 import React from 'react'
-import type { Shape } from './types'
-import { Rect } from './shapes/Rect'
+import type { Shape } from '../types'
 
 interface ShapeRendererProps {
   shape: Shape

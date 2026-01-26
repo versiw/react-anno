@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
-import type { Shape } from '../types'
-import { getStrategy } from './registry'
-import { getSVGPoint } from '../utils/geometry'
+import React, { useEffect, useRef, useState } from 'react'
+import { getTransformStrategy } from '../../strategies/transforms/registry'
+import type { Shape, TransformHandle } from '../../types'
+import { getSVGPoint } from '../../utils/geometry'
 
 interface TransformerProps {
   /** 当前选中的图形 */
@@ -13,7 +13,7 @@ interface TransformerProps {
 }
 
 export const Transformer: React.FC<TransformerProps> = ({ shape, svgElement, onChange }) => {
-  const strategy = getStrategy(shape.type)
+  const strategy = getTransformStrategy(shape.type)
 
   const [isDragging, setIsDragging] = useState(false)
   const [activeHandleId, setActiveHandleId] = useState<string | null>(null)
@@ -95,7 +95,7 @@ export const Transformer: React.FC<TransformerProps> = ({ shape, svgElement, onC
 
       <path d={getShapePath(shape)} fill="none" pointerEvents="none" />
 
-      {handles.map((handle) => (
+      {handles.map((handle: TransformHandle) => (
         <rect
           key={handle.id}
           data-testid={`transformer-handle-${handle.id}`}

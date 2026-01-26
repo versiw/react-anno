@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
-import type { AnnotatorStyleConfig } from '../types'
 import { DEFAULT_STYLE_CONFIG } from '../constants'
+import type { AnnotatorStyleConfig } from '../types'
 
 export interface AnnoContextValue {
   styleConfig: AnnotatorStyleConfig

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react'
-import type { Shape, ToolType, ToolContext } from '../types'
-import { getToolStrategy } from '../tools'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { getDrawStrategy } from '../strategies/draw/registry'
+import type { DrawContext, Shape, ToolType } from '../types'
 
 interface UseDrawParams {
   svgRef: React.RefObject<SVGSVGElement | null>
@@ -14,10 +14,12 @@ export const useDraw = ({ svgRef, tool, data, onChange, onSelect }: UseDrawParam
   const [draft, setDraft] = useState<Shape | null>(null)
 
   const draftRef = useRef(draft)
-
   useEffect(() => {
     draftRef.current = draft
   }, [draft])
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessionRef = useRef<Record<string, any>>({})
 
   const handleEvent = useCallback(
     (e: React.MouseEvent, eventType: 'onMouseDown' | 'onMouseMove' | 'onMouseUp') => {
@@ -36,19 +38,20 @@ export const useDraw = ({ svgRef, tool, data, onChange, onSelect }: UseDrawParam
         onSelect?.(null)
       }
 
-      const strategy = getToolStrategy(tool)
+      const strategy = getDrawStrategy(tool)
       if (!strategy) return
 
-      const context: ToolContext = {
+      const context: DrawContext = {
         svgElement: svgRef.current,
         currentDraft: draftRef.current,
         setDraft: (shape) => setDraft(shape),
         onDrawEnd: (newShape) => {
           onChange([...data, newShape])
-        }
+        },
+        storage: sessionRef.current
       }
 
-      strategy[eventType](e, context)
+      strategy[eventType](e, context)+
     },
     [tool, data, onChange, onSelect, svgRef]
   )

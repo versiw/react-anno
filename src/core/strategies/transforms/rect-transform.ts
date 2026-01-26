@@ -1,6 +1,6 @@
-import type { RectShape, TransformerStrategy, TransformHandle } from '../../types'
+import type { RectShape, TransformStrategy, TransformHandle } from '../../types'
 
-export const rectStrategy: TransformerStrategy<RectShape> = {
+export const rectTransformStrategy: TransformStrategy<RectShape> = {
   getHandles: (shape) => {
     const { x, y, width, height } = shape
     const halfW = width / 2

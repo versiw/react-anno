@@ -1,6 +1,6 @@
 import { vi, describe, beforeEach, it, expect } from 'vitest'
-import type { ToolContext } from '@/core/types'
-import { RectTool } from '@/core/tools/RectTool'
+import type { DrawContext } from '@/core/types'
+import { rectDrawStrategy } from '@/core/strategies/draw/rect-draw'
 
 vi.mock('@/core/utils/geometry.ts', () => ({
   getSVGPoint: (_svg: SVGSVGElement, e: MouseEvent) => ({
@@ -9,17 +9,16 @@ vi.mock('@/core/utils/geometry.ts', () => ({
   })
 }))
 
-describe('矩形工具策略', () => {
-  let tool: RectTool
-  let mockContext: ToolContext
+describe('矩形绘制策略 (Functional)', () => {
+  let mockContext: DrawContext
 
   beforeEach(() => {
-    tool = new RectTool()
     mockContext = {
       svgElement: document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
       currentDraft: null,
       setDraft: vi.fn(),
-      onDrawEnd: vi.fn()
+      onDrawEnd: vi.fn(),
+      storage: {}
     }
   })
 
@@ -27,10 +26,12 @@ describe('矩形工具策略', () => {
     return { clientX, clientY } as React.MouseEvent<SVGSVGElement>
   }
 
-  it('MouseDown 时应初始化草稿', () => {
+  it('onMouseDown: 应将起始点存入 storage 并初始化草稿', () => {
     const event = createMockEvent(10, 10)
 
-    tool.onMouseDown(event, mockContext)
+    rectDrawStrategy.onMouseDown(event, mockContext)
+
+    expect(mockContext.storage.startPoint).toEqual({ x: 10, y: 10 })
 
     expect(mockContext.setDraft).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -43,9 +44,10 @@ describe('矩形工具策略', () => {
     )
   })
 
-  it('MouseMove 时应正确更新草稿 (向右下拖拽)', () => {
-    tool.onMouseDown(createMockEvent(10, 10), mockContext)
-    tool.onMouseMove(createMockEvent(50, 40), mockContext)
+  it('onMouseMove: 应读取 storage 中的起始点并更新草稿 (向右下拖拽)', () => {
+    mockContext.storage.startPoint = { x: 10, y: 10 }
+
+    rectDrawStrategy.onMouseMove(createMockEvent(50, 40), mockContext)
 
     expect(mockContext.setDraft).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -57,9 +59,10 @@ describe('矩形工具策略', () => {
     )
   })
 
-  it('应处理反向拖拽 (向左上拖拽)', () => {
-    tool.onMouseDown(createMockEvent(100, 100), mockContext)
-    tool.onMouseMove(createMockEvent(80, 80), mockContext)
+  it('onMouseMove: 应处理反向拖拽 (向左上拖拽)', () => {
+    mockContext.storage.startPoint = { x: 100, y: 100 }
+
+    rectDrawStrategy.onMouseMove(createMockEvent(80, 80), mockContext)
 
     expect(mockContext.setDraft).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -71,9 +74,8 @@ describe('矩形工具策略', () => {
     )
   })
 
-  it('尺寸有效时 MouseUp 应提交形状', () => {
-    tool.onMouseDown(createMockEvent(10, 10), mockContext)
-
+  it('onMouseUp: 尺寸有效时应提交形状并清理 storage', () => {
+    mockContext.storage.startPoint = { x: 10, y: 10 }
     mockContext.currentDraft = {
       id: 'draft',
       type: 'rect',
@@ -83,15 +85,15 @@ describe('矩形工具策略', () => {
       height: 50
     }
 
-    tool.onMouseUp(createMockEvent(0, 0), mockContext)
+    rectDrawStrategy.onMouseUp(createMockEvent(0, 0), mockContext)
 
     expect(mockContext.onDrawEnd).toHaveBeenCalled()
+    expect(mockContext.storage.startPoint).toBeNull()
     expect(mockContext.setDraft).toHaveBeenCalledWith(null)
   })
 
-  it('应忽略尺寸过小的形状', () => {
-    tool.onMouseDown(createMockEvent(10, 10), mockContext)
-
+  it('onMouseUp: 应忽略尺寸过小的形状', () => {
+    mockContext.storage.startPoint = { x: 10, y: 10 }
     mockContext.currentDraft = {
       id: 'draft',
       type: 'rect',
@@ -101,9 +103,10 @@ describe('矩形工具策略', () => {
       height: 2
     }
 
-    tool.onMouseUp(createMockEvent(0, 0), mockContext)
+    rectDrawStrategy.onMouseUp(createMockEvent(0, 0), mockContext)
 
     expect(mockContext.onDrawEnd).not.toHaveBeenCalled()
+    expect(mockContext.storage.startPoint).toBeNull()
     expect(mockContext.setDraft).toHaveBeenCalledWith(null)
   })
 })

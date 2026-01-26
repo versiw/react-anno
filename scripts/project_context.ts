@@ -19,6 +19,7 @@ const CONFIG = {
   ],
 
   excludedFiles: [
+    'stats.html',
     'project_context.md',
     'package-lock.json',
     'yarn.lock',

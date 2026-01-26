@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { Shape } from '../types'
-import { useAnnoContext } from '../context/AnnoContext'
+import { useAnnoContext } from '../context/anno-context'
 
 interface UseShapeStyleProps {
   shape: Shape

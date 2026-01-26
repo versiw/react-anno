@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useShapeStyle } from '@/core/hooks/useShapeStyle'
-import { AnnoProvider } from '@/core/context/AnnoContext'
+import { useShapeStyle } from '@/core/hooks/use-shape-style'
+import { AnnoProvider } from '@/core/context/anno-context'
 import type { Shape, AnnotatorStyleConfig } from '@/core/types'
 import React from 'react'
 
